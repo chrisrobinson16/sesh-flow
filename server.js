@@ -27,6 +27,10 @@ connectDB()
 
 const app = express()
 
+if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1)
+}
+
 const FRONTEND_PORT = Number(process.env.FRONTEND_PORT || 5173)
 const corsOrigins = new Set([
   `http://localhost:${FRONTEND_PORT}`,
@@ -64,7 +68,7 @@ app.use(
     credentials: true,
   }),
 )
-app.use(express.json())
+app.use(express.json({ limit: '1mb' }))
 
 app.get('/', (req, res) => {
   res.send('API running')

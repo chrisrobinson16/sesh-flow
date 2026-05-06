@@ -7,7 +7,7 @@ const imageFileFilter = (req, file, cb) => {
     cb(null, true)
     return
   }
-  cb(new Error('Only image files are allowed'))
+  cb(new Error('Please upload an image file (JPEG, PNG, WebP, etc.)'))
 }
 
 const upload = multer({

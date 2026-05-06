@@ -7,11 +7,19 @@ import { API_ROUTES } from '../lib/apiConfig'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function mapSignupError(message) {
-  const raw = String(message || '').toLowerCase()
-  if (raw.includes('user already exists')) {
+  const m = String(message || '').trim()
+  if (!m) return 'Sign up failed. Try again.'
+  if (m === 'Please enter a valid email address') return m
+  if (m === 'Password must be at least 8 characters') return m
+  if (m === 'An account with this email already exists') return m
+  const raw = m.toLowerCase()
+  if (raw.includes('too many attempts')) {
+    return 'Too many attempts. Please try again later.'
+  }
+  if (raw.includes('user already exists') || raw.includes('already exists')) {
     return 'An account with this email already exists'
   }
-  return message || 'Sign up failed. Try again.'
+  return m
 }
 
 function Signup() {
@@ -67,6 +75,10 @@ function Signup() {
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
+        if (res.status === 429) {
+          setError('Too many attempts. Please try again later.')
+          return
+        }
         setError(mapSignupError(data.message))
         return
       }

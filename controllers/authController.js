@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import validator from 'validator'
 import User from '../models/User.js'
 
 const signToken = (id) => {
@@ -11,41 +12,41 @@ const signToken = (id) => {
   })
 }
 
-const isValidEmail = (email) => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())
-}
+const GENERIC_LOGIN_ERROR = 'Invalid email or password'
 
 export const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body
+    const name = String(req.body?.name ?? '').trim()
+    const emailRaw = String(req.body?.email ?? '').trim().toLowerCase()
+    const password = req.body?.password
 
-    if (!name || !String(name).trim()) {
+    if (!name) {
       return res.status(400).json({ message: 'Name is required' })
     }
-    if (!email || !String(email).trim()) {
-      return res.status(400).json({ message: 'Email is required' })
+    if (!emailRaw) {
+      return res.status(400).json({ message: 'Please enter a valid email address' })
     }
-    if (!password || !String(password).trim()) {
+    if (!validator.isEmail(emailRaw)) {
+      return res.status(400).json({ message: 'Please enter a valid email address' })
+    }
+    if (password == null || String(password).trim() === '') {
       return res.status(400).json({ message: 'Password is required' })
     }
-    if (String(password).length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' })
-    }
-    if (!isValidEmail(email)) {
-      return res.status(400).json({ message: 'Please enter a valid email' })
+    if (String(password).length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' })
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase().trim() })
+    const existing = await User.findOne({ email: emailRaw })
     if (existing) {
-      return res.status(400).json({ message: 'User already exists with this email' })
+      return res.status(400).json({ message: 'An account with this email already exists' })
     }
 
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(String(password), salt)
 
     const user = await User.create({
-      name: String(name).trim(),
-      email: String(email).trim().toLowerCase(),
+      name,
+      email: emailRaw,
       password: hashedPassword,
     })
 
@@ -57,7 +58,7 @@ export const registerUser = async (req, res, next) => {
     })
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ message: 'User already exists with this email' })
+      return res.status(400).json({ message: 'An account with this email already exists' })
     }
     next(error)
   }
@@ -65,27 +66,26 @@ export const registerUser = async (req, res, next) => {
 
 export const loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body
+    const emailRaw = String(req.body?.email ?? '').trim().toLowerCase()
+    const password = req.body?.password
 
-    if (!email || !String(email).trim()) {
-      return res.status(400).json({ message: 'Email is required' })
+    if (!emailRaw || password == null || String(password).trim() === '') {
+      return res.status(401).json({ message: GENERIC_LOGIN_ERROR })
     }
-    if (!password) {
-      return res.status(400).json({ message: 'Password is required' })
+    if (!validator.isEmail(emailRaw)) {
+      return res.status(401).json({ message: GENERIC_LOGIN_ERROR })
     }
 
-    const user = await User.findOne({ email: String(email).trim().toLowerCase() }).select(
-      '+password',
-    )
+    const user = await User.findOne({ email: emailRaw }).select('+password')
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' })
+      return res.status(401).json({ message: GENERIC_LOGIN_ERROR })
     }
 
     const isMatch = await bcrypt.compare(String(password), user.password)
 
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid email or password' })
+      return res.status(401).json({ message: GENERIC_LOGIN_ERROR })
     }
 
     const token = signToken(user._id)

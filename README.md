@@ -1,19 +1,91 @@
-# React + Vite
+# Sesh Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Full-stack MERN app: JWT auth, protected session routes, Cloudinary image uploads, PWA-ready Vite frontend, and wellness-focused UI.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Node.js** 18+ (20 LTS recommended)
+- **MongoDB** (local or Atlas URI)
+- **Cloudinary** (optional; required only for session image uploads)
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Clone the repo** and install dependencies:
 
-## Expanding the ESLint configuration
+   ```bash
+   npm install
+   ```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2. **Environment variables** — copy the example file and edit **only on your machine**:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Fill in at minimum:
+
+   - `MONGO_URI` — MongoDB connection string  
+   - `JWT_SECRET` — long random string (never share or commit)  
+   - `CLOUDINARY_*` — if you use session photos  
+   - `VITE_API_URL` — API base the browser calls (e.g. `http://localhost:5001` for local desktop, or your Mac LAN IP + port for phone testing)
+
+   **Security:** `.env` is listed in `.gitignore` and must **never** be committed. Use `.env.example` only as a template (no real secrets).
+
+3. **Run locally** (two terminals):
+
+   ```bash
+   npm run server
+   ```
+
+   ```bash
+   npm run dev
+   ```
+
+   Open the URL Vite prints (default `http://localhost:5173`). The API defaults to `http://localhost:5001` unless you override `PORT` / `VITE_API_URL`.
+
+## Production build (frontend)
+
+```bash
+npm run build
+```
+
+Outputs `dist/` including the PWA service worker (`sw.js`) and `manifest.webmanifest`. Preview locally:
+
+```bash
+npm run preview -- --host 0.0.0.0 --port 4173
+```
+
+Serve `dist/` behind HTTPS in production for best PWA install behavior.
+
+## PWA (install on iPhone)
+
+1. Run a **production build** and serve it over **HTTPS** (or trusted localhost for dev tools).  
+2. In **Safari**, use **Share → Add to Home Screen**.  
+3. Theme / icons come from the web app manifest and `public/` assets after build.
+
+## Security (V1)
+
+| Measure | Detail |
+|--------|--------|
+| **Secrets** | Keep all secrets in `.env`; never commit `.env`. |
+| **Auth validation** | Register: trimmed name, normalized email, `validator.isEmail`, password min **8** chars, clear error messages. Login: generic **Invalid email or password** on failure. |
+| **Rate limits** | **5** requests / **15 min** / **IP** on `POST /api/auth/register` and `POST /api/auth/login`. **30** creates / **15 min** / **IP** on `POST /api/sessions`. Response: `Too many attempts. Please try again later.` — tuned for normal use, not strict anti-DDoS. |
+| **Body size** | `express.json({ limit: '1mb' })`. |
+| **Uploads** | Session images: **images only**, max **5MB**; non-images rejected with a clear message. |
+| **Reverse proxy** | If the API sits behind nginx/Heroku/etc., set `TRUST_PROXY=1` in `.env` so rate limiting sees the real client IP. |
+
+## Pre-deploy checklist
+
+Use this before tagging a release or opening a public demo:
+
+- [ ] **`git status`** is clean (no accidental `.env` or `dist/` commits — `dist/` is gitignored).  
+- [ ] **`npm run build`** completes; PWA plugin prints generated `sw.js`.  
+- [ ] **`npm run server`** starts with no errors (Mongo + optional Cloudinary env).  
+- [ ] **Signup / login** in the browser with your production-like `.env`.  
+- [ ] **Rate limits** — a few logins/registers and session creates work; only rapid abuse hits `429`.  
+- [ ] **Sessions** — create, edit, delete from the UI.  
+- [ ] **Image upload** — one session with a small JPEG/PNG under 5MB.  
+- [ ] **PWA** — after `build` + HTTPS (or your host’s rules), install on iPhone and open once online so the shell caches.
 
 ## Local iPhone Testing
 
@@ -32,9 +104,30 @@ Use this to test the app on your iPhone while running locally on your Mac.
    - `http://<YOUR_MAC_IP>:5173`
 
 Notes:
+
 - Vite is configured with `host: "0.0.0.0"` for LAN device access.
 - Express binds to `HOST` (default `0.0.0.0`) so API and uploads work from LAN clients.
 - Switch environments later by changing `VITE_API_URL`:
   - local desktop: `http://localhost:5001`
   - local phone testing: `http://<YOUR_MAC_IP>:5001`
   - production: `https://your-api-domain`
+
+## Scripts
+
+| Command | Purpose |
+|--------|---------|
+| `npm run dev` | Vite dev server (frontend) |
+| `npm run server` | Express API |
+| `npm run build` | Production frontend + PWA assets |
+| `npm run preview` | Serve `dist/` locally |
+| `npm run lint` | ESLint |
+
+## Optional: regenerate PWA icons
+
+After changing the source mark in `public/brand/sesh-icon.png`:
+
+```bash
+python3 scripts/generate-pwa-icons.py
+```
+
+Then run `npm run build` again.

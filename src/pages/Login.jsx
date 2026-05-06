@@ -7,11 +7,16 @@ import { API_ROUTES } from '../lib/apiConfig'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function mapLoginError(message) {
-  const raw = String(message || '').toLowerCase()
+  const m = String(message || '').trim()
+  if (!m) return 'Invalid email or password'
+  const raw = m.toLowerCase()
+  if (raw.includes('too many attempts')) {
+    return 'Too many attempts. Please try again later.'
+  }
   if (raw.includes('invalid email or password')) {
     return 'Invalid email or password'
   }
-  return message || 'Login failed. Try again.'
+  return 'Invalid email or password'
 }
 
 function Login() {
@@ -53,6 +58,10 @@ function Login() {
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
+        if (res.status === 429) {
+          setError('Too many attempts. Please try again later.')
+          return
+        }
         setError(mapLoginError(data.message))
         return
       }
