@@ -147,7 +147,7 @@ function Dashboard() {
       ) : error ? (
         <p className="empty-state">{error}</p>
       ) : (
-        <>
+        <div className="content-reveal">
           <div className="stats-grid">
             <StatCard
               label="Total Sessions"
@@ -217,7 +217,7 @@ function Dashboard() {
               <p className="empty-state">{EMPTY_COPY}</p>
             )}
           </section>
-        </>
+        </div>
       )}
     </section>
   )

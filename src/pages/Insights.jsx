@@ -384,7 +384,7 @@ function Insights() {
   }
 
   return (
-    <section className="container section insights-page">
+    <section className="container section insights-page content-reveal">
       <div className="detail-card">
         <h1>Insights</h1>
         <p className="page-subtitle">Analytics from your logged sessions.</p>

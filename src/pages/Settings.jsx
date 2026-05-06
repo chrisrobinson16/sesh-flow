@@ -70,7 +70,7 @@ function Settings() {
         </div>
       </div>
 
-      <div className="detail-card settings-profile-card">
+      <div className="detail-card settings-profile-card content-reveal">
         <div className="settings-profile-head">
           <div className="settings-avatar" aria-hidden="true">
             {initials}

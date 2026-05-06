@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import PWAInstallPrompt from './components/PWAInstallPrompt'
 import ProtectedRoute from './components/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import Insights from './pages/Insights'
@@ -22,7 +23,8 @@ function App() {
   return (
     <div className="app-shell">
       {showNavbar && <Navbar />}
-      <main className="page-wrapper">
+      <PWAInstallPrompt />
+      <main className="page-wrapper page-route-shell" key={location.pathname}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />

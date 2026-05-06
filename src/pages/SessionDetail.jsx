@@ -162,7 +162,7 @@ function SessionDetail() {
 
   return (
     <section className="container section">
-      <div className="detail-card">
+      <div className="detail-card content-reveal">
         {location.state?.saveMessage ? (
           <p className="status-message">{location.state.saveMessage}</p>
         ) : null}

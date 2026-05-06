@@ -181,7 +181,7 @@ function SessionHistory() {
   }
 
   return (
-    <section className="container section">
+    <section className="container section content-reveal">
       <div className="section-header">
         <div>
           <h1>Session History</h1>
