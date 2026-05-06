@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarChart3, Brain, Leaf, Medal, Sparkles, Star, TrendingUp } from 'lucide-react'
+import SkeletonCard, { SkeletonBlock } from '../components/SkeletonCard'
+import SkeletonStatCard from '../components/SkeletonStatCard'
 import StatCard from '../components/StatCard'
 import { apiFetch } from '../lib/apiFetch'
+import { API_ROUTES } from '../lib/apiConfig'
 
-const API = 'http://localhost:5001/api/sessions'
 const EMPTY_COPY = 'No insights yet. Log a few sessions to see patterns.'
 
 function safeNumberRating(session) {
@@ -241,7 +243,11 @@ function Insights() {
       setError(null)
 
       try {
-        const { response, data, unauthorized } = await apiFetch(API, {}, navigate)
+        const { response, data, unauthorized } = await apiFetch(
+          API_ROUTES.sessions,
+          {},
+          navigate,
+        )
         if (unauthorized) return
 
         if (!response.ok) {
@@ -308,12 +314,47 @@ function Insights() {
 
   if (loading) {
     return (
-      <section className="container section">
+      <section className="container section insights-page" aria-busy="true">
         <div className="detail-card">
-          <h1>Insights</h1>
-          <p className="page-subtitle">Analytics from your logged sessions.</p>
-          <p className="empty-state">Loading sessions...</p>
+          <SkeletonBlock className="skeleton-detail-title" style={{ maxWidth: '10rem' }} />
+          <SkeletonBlock
+            className="skeleton-detail-line skeleton-detail-line--short"
+            style={{ marginTop: '0.55rem' }}
+          />
         </div>
+
+        <SkeletonCard className="insight-week-card">
+          <SkeletonBlock className="skeleton-insight-week-kicker" />
+          <SkeletonBlock className="skeleton-insight-week-text" />
+          <SkeletonBlock className="skeleton-insight-week-text" />
+        </SkeletonCard>
+
+        <div className="stats-grid">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <SkeletonStatCard key={i} />
+          ))}
+        </div>
+
+        <div className="insights-stack">
+          {[0, 1, 2].map((i) => (
+            <SkeletonCard key={i}>
+              <SkeletonBlock className="skeleton-bar-title" />
+              {[0, 1, 2, 3].map((j) => (
+                <div key={j} className="skeleton-bar-row">
+                  <SkeletonBlock className="skeleton-bar-label" />
+                  <SkeletonBlock className="skeleton-bar-track" />
+                </div>
+              ))}
+            </SkeletonCard>
+          ))}
+        </div>
+
+        <SkeletonCard>
+          <SkeletonBlock className="skeleton-personal-title" />
+          {[0, 1, 2].map((i) => (
+            <SkeletonBlock key={i} className="skeleton-personal-line" />
+          ))}
+        </SkeletonCard>
       </section>
     )
   }

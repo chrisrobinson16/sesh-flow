@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { SkeletonBlock } from '../components/SkeletonCard'
 import { apiFetch } from '../lib/apiFetch'
 import { API_BASE, getStructuredNoteSectionsForDisplay } from '../lib/sessionForm.js'
 
@@ -96,8 +97,26 @@ function SessionDetail() {
 
   if (loading) {
     return (
-      <section className="container section">
-        <p className="empty-state">Loading session...</p>
+      <section className="container section" aria-busy="true">
+        <div className="detail-card skeleton-session-detail">
+          <SkeletonBlock className="skeleton-detail-title" />
+          <SkeletonBlock className="skeleton-detail-image" />
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <SkeletonBlock
+              key={i}
+              className={
+                i % 3 === 2
+                  ? 'skeleton-detail-line skeleton-detail-line--short'
+                  : 'skeleton-detail-line'
+              }
+            />
+          ))}
+          <div className="session-detail-actions">
+            <SkeletonBlock className="skeleton-filter-btn" style={{ width: '7.5rem' }} />
+            <SkeletonBlock className="skeleton-filter-btn" style={{ width: '8rem' }} />
+            <SkeletonBlock className="skeleton-filter-btn" style={{ width: '9rem' }} />
+          </div>
+        </div>
       </section>
     )
   }
@@ -149,6 +168,13 @@ function SessionDetail() {
         ) : null}
 
         <h1>{session.productName}</h1>
+        {session.imageUrl ? (
+          <img
+            src={session.imageUrl}
+            alt={`${session.productName} session`}
+            className="session-detail-image"
+          />
+        ) : null}
         <p>
           <strong>Date:</strong> {formatSessionDate(session.createdAt)}
         </p>

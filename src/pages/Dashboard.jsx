@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Activity, CalendarClock, Leaf, Sparkles, Star, TrendingUp } from 'lucide-react'
 import SessionCard from '../components/SessionCard'
+import SkeletonCard, { SkeletonBlock } from '../components/SkeletonCard'
+import SkeletonSessionCard from '../components/SkeletonSessionCard'
+import SkeletonStatCard from '../components/SkeletonStatCard'
 import { apiFetch } from '../lib/apiFetch'
 import StatCard from '../components/StatCard'
+import { API_ROUTES } from '../lib/apiConfig'
 
 const EMPTY_COPY = 'No sessions yet. Log your first one.'
 
@@ -20,7 +24,7 @@ function Dashboard() {
 
       try {
         const { response, data, unauthorized } = await apiFetch(
-          'http://localhost:5001/api/sessions',
+          API_ROUTES.sessions,
           {},
           navigate,
         )
@@ -109,7 +113,37 @@ function Dashboard() {
       </div>
 
       {loading ? (
-        <p className="empty-state">Loading sessions...</p>
+        <div className="dashboard-skeleton" aria-busy="true">
+          <div className="stats-grid">
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+          </div>
+
+          <SkeletonCard className="dashboard-insights">
+            <SkeletonBlock className="skeleton-bar-title" style={{ marginBottom: '0.85rem' }} />
+            <div className="skeleton-dashboard-insight-grid">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="skeleton-dashboard-insight-item">
+                  <SkeletonBlock className="skeleton-insight-icon" />
+                  <div className="skeleton-insight-lines">
+                    <SkeletonBlock className="skeleton-insight-line--sm" />
+                    <SkeletonBlock className="skeleton-insight-line--lg" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SkeletonCard>
+
+          <section className="list-section">
+            <h2>Recent Sessions</h2>
+            <div className="card-list dashboard-recent-grid">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <SkeletonSessionCard key={i} />
+              ))}
+            </div>
+          </section>
+        </div>
       ) : error ? (
         <p className="empty-state">{error}</p>
       ) : (
@@ -174,7 +208,7 @@ function Dashboard() {
           <section className="list-section">
             <h2>Recent Sessions</h2>
             {recentSessions.length > 0 ? (
-              <div className="card-list">
+              <div className="card-list dashboard-recent-grid">
                 {recentSessions.slice(0, 5).map((session) => (
                   <SessionCard key={session._id} session={session} />
                 ))}

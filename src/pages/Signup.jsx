@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { saveAuth } from '../lib/auth'
+import { API_ROUTES } from '../lib/apiConfig'
 
-const REGISTER_URL = 'http://localhost:5001/api/auth/register'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function mapSignupError(message) {
@@ -54,7 +54,7 @@ function Signup() {
     setSubmitting(true)
 
     try {
-      const res = await fetch(REGISTER_URL, {
+      const res = await fetch(API_ROUTES.auth.register, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,10 +1,24 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogOut, ShieldCheck, UserCircle2 } from 'lucide-react'
+import { SkeletonBlock } from '../components/SkeletonCard'
 import { getUser, logout } from '../lib/auth'
 
 function Settings() {
   const navigate = useNavigate()
-  const user = getUser()
+  const [user, setUser] = useState(null)
+  const [profileReady, setProfileReady] = useState(false)
+
+  useEffect(() => {
+    setUser(getUser())
+    setProfileReady(true)
+  }, [])
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   const initials = String(user?.name || 'S')
     .split(' ')
     .map((p) => p[0])
@@ -12,9 +26,39 @@ function Settings() {
     .slice(0, 2)
     .toUpperCase()
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
+  if (!profileReady) {
+    return (
+      <section className="container section" aria-busy="true">
+        <div className="section-header">
+          <div>
+            <h1>Settings</h1>
+            <p className="page-subtitle">Manage your account and app access.</p>
+          </div>
+        </div>
+
+        <div className="detail-card settings-profile-card skeleton-settings-card">
+          <div className="skeleton-settings-head">
+            <SkeletonBlock className="skeleton-settings-avatar" />
+            <div>
+              <SkeletonBlock className="skeleton-settings-name" />
+              <SkeletonBlock className="skeleton-settings-email" />
+            </div>
+          </div>
+          <div className="skeleton-settings-grid">
+            {[0, 1].map((i) => (
+              <div key={i} className="skeleton-settings-item">
+                <SkeletonBlock className="skeleton-settings-item-icon" />
+                <div className="skeleton-settings-item-lines">
+                  <SkeletonBlock className="skeleton-filter-label" />
+                  <SkeletonBlock className="skeleton-detail-line" style={{ maxWidth: '11rem' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <SkeletonBlock className="skeleton-settings-logout" />
+        </div>
+      </section>
+    )
   }
 
   return (

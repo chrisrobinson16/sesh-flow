@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ImagePlus, RefreshCw, Trash2, UploadCloud } from 'lucide-react'
 import {
   ChipGroup,
   EffectPills,
@@ -41,6 +42,10 @@ function EditSession() {
   const [noteHit, setNoteHit] = useState('')
   const [noteRemember, setNoteRemember] = useState('')
   const [noteExtra, setNoteExtra] = useState('')
+  const [currentImageUrl, setCurrentImageUrl] = useState('')
+  const [sessionImageFile, setSessionImageFile] = useState(null)
+  const [sessionImagePreview, setSessionImagePreview] = useState('')
+  const fileInputRef = useRef(null)
 
   const productOptions = useMemo(
     () => mergeOptionList(PRODUCT_TYPES, productType),
@@ -86,6 +91,9 @@ function EditSession() {
         setNoteHit(parsed.hit)
         setNoteRemember(parsed.remember)
         setNoteExtra(parsed.extra)
+        setCurrentImageUrl(data.imageUrl || '')
+        setSessionImageFile(null)
+        setSessionImagePreview('')
       } catch (e) {
         console.error(e)
         setLoadError('Failed to load session')
@@ -96,6 +104,14 @@ function EditSession() {
     if (id) load()
   }, [id, navigate])
 
+  useEffect(() => {
+    return () => {
+      if (sessionImagePreview) {
+        URL.revokeObjectURL(sessionImagePreview)
+      }
+    }
+  }, [sessionImagePreview])
+
   const toggleEffect = (effect) => {
     setEffects((prev) => {
       const next = new Set(prev)
@@ -103,6 +119,31 @@ function EditSession() {
       else next.add(effect)
       return next
     })
+  }
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      setSessionImageFile(null)
+      setSessionImagePreview('')
+      return
+    }
+    if (sessionImagePreview) {
+      URL.revokeObjectURL(sessionImagePreview)
+    }
+    setSessionImageFile(file)
+    setSessionImagePreview(URL.createObjectURL(file))
+  }
+
+  const handleRemoveImageSelection = () => {
+    if (sessionImagePreview) {
+      URL.revokeObjectURL(sessionImagePreview)
+    }
+    setSessionImageFile(null)
+    setSessionImagePreview('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -119,28 +160,26 @@ function EditSession() {
       noteRemember,
       noteExtra,
     )
-    const payload = {
-      productName: name,
-      productType,
-      strainType,
-      amount: amount.trim() || undefined,
-      moodBefore: String(moodBefore),
-      moodAfter: String(moodAfter),
-      effects: Array.from(effects),
-      rating: Number(rating),
-      sessionNotes,
+    const formData = new FormData()
+    formData.append('productName', name)
+    formData.append('productType', productType)
+    formData.append('strainType', strainType)
+    if (amount.trim()) formData.append('amount', amount.trim())
+    formData.append('moodBefore', String(moodBefore))
+    formData.append('moodAfter', String(moodAfter))
+    formData.append('effects', JSON.stringify(Array.from(effects)))
+    formData.append('rating', String(Number(rating)))
+    formData.append('sessionNotes', JSON.stringify(sessionNotes))
+    if (sessionImageFile) {
+      formData.append('sessionImage', sessionImageFile)
     }
-    if (!payload.amount) delete payload.amount
 
     try {
       const { response, data, unauthorized } = await apiFetch(
         `${API_BASE}/${id}`,
         {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
+          body: formData,
         },
         navigate,
       )
@@ -300,6 +339,81 @@ function EditSession() {
               onChange={(e) => setNoteExtra(e.target.value)}
             />
           </fieldset>
+
+          <div className="form-field">
+            <label htmlFor="edit-session-image">Session image (optional)</label>
+            <input
+              ref={fileInputRef}
+              id="edit-session-image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="session-upload-input"
+            />
+            {sessionImagePreview && sessionImageFile ? (
+              <div className="session-upload-preview-wrap">
+                <img
+                  src={sessionImagePreview}
+                  alt="New session image preview"
+                  className="session-image-preview"
+                />
+                <div className="session-upload-file-row">
+                  <p className="session-upload-file-name">
+                    <ImagePlus size={14} />
+                    {sessionImageFile.name}
+                  </p>
+                  <div className="session-upload-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary session-upload-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <RefreshCw size={14} />
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary session-upload-btn"
+                      onClick={handleRemoveImageSelection}
+                    >
+                      <Trash2 size={14} />
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : currentImageUrl ? (
+              <div className="session-upload-preview-wrap">
+                <img
+                  src={currentImageUrl}
+                  alt="Current session"
+                  className="session-image-preview"
+                />
+                <div className="session-upload-file-row">
+                  <p className="session-upload-file-name">
+                    <ImagePlus size={14} />
+                    Current image
+                  </p>
+                  <div className="session-upload-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary session-upload-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <RefreshCw size={14} />
+                      Replace
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <label htmlFor="edit-session-image" className="session-upload-card">
+                <UploadCloud size={20} />
+                <p className="session-upload-title">Tap to upload a session photo</p>
+                <p className="session-upload-subtitle">Jars, flower, setup, vibe, etc.</p>
+              </label>
+            )}
+          </div>
 
           <div className="form-actions-row">
             <button type="submit" className="btn btn-primary">

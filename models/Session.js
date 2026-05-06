@@ -42,6 +42,12 @@ const sessionSchema = new mongoose.Schema({
     reminder: { type: String },
     additional: { type: String },
   },
+  imageUrl: {
+    type: String,
+  },
+  imagePublicId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

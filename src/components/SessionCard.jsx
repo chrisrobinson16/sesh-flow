@@ -50,6 +50,14 @@ function SessionCard({ session }) {
         </span>
       </div>
 
+      {session.imageUrl ? (
+        <img
+          src={session.imageUrl}
+          alt={`${session.productName} thumbnail`}
+          className="session-card-image"
+        />
+      ) : null}
+
       {(typeLabel || strainLabel) && (
         <div className="session-card-badges">
           {typeLabel ? (

@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { saveAuth } from '../lib/auth'
+import { API_ROUTES } from '../lib/apiConfig'
 
-const LOGIN_URL = 'http://localhost:5001/api/auth/login'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function mapLoginError(message) {
@@ -41,7 +41,7 @@ function Login() {
     setSubmitting(true)
 
     try {
-      const res = await fetch(LOGIN_URL, {
+      const res = await fetch(API_ROUTES.auth.login, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

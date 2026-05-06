@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FilterX, Search } from 'lucide-react'
 import SessionCard from '../components/SessionCard'
+import SkeletonCard, { SkeletonBlock } from '../components/SkeletonCard'
+import SkeletonSessionCard from '../components/SkeletonSessionCard'
 import { apiFetch } from '../lib/apiFetch'
+import { API_ROUTES } from '../lib/apiConfig'
 
 const EMPTY_COPY = 'No sessions yet. Log your first one.'
 
@@ -25,7 +28,7 @@ function SessionHistory() {
 
       try {
         const { response, data, unauthorized } = await apiFetch(
-          'http://localhost:5001/api/sessions',
+          API_ROUTES.sessions,
           {},
           navigate,
         )
@@ -131,10 +134,38 @@ function SessionHistory() {
 
   if (loading) {
     return (
-      <section className="container section">
-        <h1>Session History</h1>
-        <p className="page-subtitle">Review every logged session in one place.</p>
-        <p className="empty-state">Loading sessions...</p>
+      <section className="container section" aria-busy="true">
+        <div className="section-header">
+          <div>
+            <h1>Session History</h1>
+            <p className="page-subtitle">Review every logged session in one place.</p>
+          </div>
+        </div>
+
+        <SkeletonCard className="session-filter-card">
+          <div className="session-filter-row">
+            <SkeletonBlock className="skeleton-filter-label" />
+            <SkeletonBlock className="skeleton-filter-search" />
+          </div>
+          <div className="session-filter-grid">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="session-filter-row">
+                <SkeletonBlock className="skeleton-filter-label" />
+                <SkeletonBlock className="skeleton-filter-select" />
+              </div>
+            ))}
+          </div>
+          <div className="skeleton-filter-footer">
+            <SkeletonBlock className="skeleton-filter-count" />
+            <SkeletonBlock className="skeleton-filter-btn" />
+          </div>
+        </SkeletonCard>
+
+        <div className="card-list">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <SkeletonSessionCard key={i} />
+          ))}
+        </div>
       </section>
     )
   }

@@ -1,3 +1,5 @@
+import { API_ROUTES } from './apiConfig'
+
 export const PRODUCT_TYPES = [
   'Flower',
   'Vape',
@@ -22,7 +24,7 @@ export const EFFECT_OPTIONS = [
   'Energetic',
 ]
 
-export const API_BASE = 'http://localhost:5001/api/sessions'
+export const API_BASE = API_ROUTES.sessions
 
 export function buildNotes(setting, hit, remember, extra) {
   const parts = []

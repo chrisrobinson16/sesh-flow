@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ImagePlus, RefreshCw, Trash2, UploadCloud } from 'lucide-react'
 import {
   ChipGroup,
   EffectPills,
@@ -17,6 +18,7 @@ import {
 function NewSession() {
   const navigate = useNavigate()
   const [saveMessage, setSaveMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [productName, setProductName] = useState('')
   const [productType, setProductType] = useState('Flower')
@@ -30,6 +32,17 @@ function NewSession() {
   const [noteHit, setNoteHit] = useState('')
   const [noteRemember, setNoteRemember] = useState('')
   const [noteExtra, setNoteExtra] = useState('')
+  const [sessionImageFile, setSessionImageFile] = useState(null)
+  const [sessionImagePreview, setSessionImagePreview] = useState('')
+  const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (sessionImagePreview) {
+        URL.revokeObjectURL(sessionImagePreview)
+      }
+    }
+  }, [sessionImagePreview])
 
   const toggleEffect = (effect) => {
     setEffects((prev) => {
@@ -52,10 +65,38 @@ function NewSession() {
     setNoteHit('')
     setNoteRemember('')
     setNoteExtra('')
+    setSessionImageFile(null)
+    setSessionImagePreview('')
+  }
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      setSessionImageFile(null)
+      setSessionImagePreview('')
+      return
+    }
+    if (sessionImagePreview) {
+      URL.revokeObjectURL(sessionImagePreview)
+    }
+    setSessionImageFile(file)
+    setSessionImagePreview(URL.createObjectURL(file))
+  }
+
+  const handleRemoveImage = () => {
+    if (sessionImagePreview) {
+      URL.revokeObjectURL(sessionImagePreview)
+    }
+    setSessionImageFile(null)
+    setSessionImagePreview('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (isSubmitting) return
     setSaveMessage('')
 
     const name = productName.trim()
@@ -71,26 +112,28 @@ function NewSession() {
       noteExtra,
     )
 
-    const payload = {
-      productName: name,
-      productType,
-      strainType,
-      moodBefore: String(moodBefore),
-      moodAfter: String(moodAfter),
-      effects: Array.from(effects),
-      rating: Number(rating),
-      ...(Object.keys(sessionNotes).length > 0 && { sessionNotes }),
+    const formData = new FormData()
+    formData.append('productName', name)
+    formData.append('productType', productType)
+    formData.append('strainType', strainType)
+    formData.append('moodBefore', String(moodBefore))
+    formData.append('moodAfter', String(moodAfter))
+    formData.append('effects', JSON.stringify(Array.from(effects)))
+    formData.append('rating', String(Number(rating)))
+    if (Object.keys(sessionNotes).length > 0) {
+      formData.append('sessionNotes', JSON.stringify(sessionNotes))
+    }
+    if (sessionImageFile) {
+      formData.append('sessionImage', sessionImageFile)
     }
 
     try {
+      setIsSubmitting(true)
       const { response, data, unauthorized } = await apiFetch(
         API_BASE,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
+          body: formData,
         },
         navigate,
       )
@@ -99,17 +142,19 @@ function NewSession() {
 
       if (!response.ok) {
         setSaveMessage(data.message || 'Error saving session ❌')
+        setIsSubmitting(false)
         return
       }
 
       resetForm()
-      setSaveMessage('Session saved to database ✅')
+      setSaveMessage('Session saved.')
       navigate('/sessions', {
-        state: { saveMessage: 'Session saved to database ✅' },
+        state: { saveMessage: 'Session saved.' },
       })
     } catch (error) {
       console.error('Error saving session:', error)
       setSaveMessage('Error saving session ❌')
+      setIsSubmitting(false)
     }
   }
 
@@ -217,8 +262,63 @@ function NewSession() {
             />
           </fieldset>
 
-          <button type="submit" className="btn btn-primary">
-            Save session
+          <div className="form-field">
+            <label htmlFor="session-image">Session image (optional)</label>
+            <input
+              ref={fileInputRef}
+              id="session-image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="session-upload-input"
+            />
+            {sessionImagePreview && sessionImageFile ? (
+              <div className="session-upload-preview-wrap">
+                <img
+                  src={sessionImagePreview}
+                  alt="Session preview"
+                  className="session-image-preview"
+                />
+                <div className="session-upload-file-row">
+                  <p className="session-upload-file-name">
+                    <ImagePlus size={14} />
+                    {sessionImageFile.name}
+                  </p>
+                  <div className="session-upload-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary session-upload-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <RefreshCw size={14} />
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary session-upload-btn"
+                      onClick={handleRemoveImage}
+                    >
+                      <Trash2 size={14} />
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <label htmlFor="session-image" className="session-upload-card">
+                <UploadCloud size={20} />
+                <p className="session-upload-title">Tap to upload a session photo</p>
+                <p className="session-upload-subtitle">Jars, flower, setup, vibe, etc.</p>
+              </label>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Saving session...' : 'Save session'}
           </button>
         </form>
         {saveMessage && <p className="status-message">{saveMessage}</p>}
