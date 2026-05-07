@@ -68,7 +68,7 @@ Serve `dist/` behind HTTPS in production for best PWA install behavior.
 | Measure | Detail |
 |--------|--------|
 | **Secrets** | Keep all secrets in `.env`; never commit `.env`. |
-| **Auth validation** | Register: trimmed name, normalized email, `validator.isEmail`, password min **8** chars, clear error messages. Login: generic **Invalid email or password** on failure. |
+| **Auth validation** | Register: trimmed name, normalized email, strict `validator.isEmail` (TLD required, no IP domains), reject **RFC 2606 reserved TLDs** (`.test`, `.example`, `.invalid`, `.localhost`, `.local`), reject **disposable inboxes** (~120k-domain list via `disposable-email-domains`), reject placeholder domains (`example.com`, `test.com`, `fake.com`, etc.). Password: **8–128 chars**, must contain a **letter and a digit**, blocked against a small **common-password list** (`password`, `password123`, `qwerty123`, …), and cannot equal the user’s name or email local-part. Login is intentionally **lenient** so accounts created before these rules can still sign in; failure returns generic **Invalid email or password**. |
 | **Rate limits** | **5** requests / **15 min** / **IP** on `POST /api/auth/register` and `POST /api/auth/login`. **30** creates / **15 min** / **IP** on `POST /api/sessions`. Response: `Too many attempts. Please try again later.` — tuned for normal use, not strict anti-DDoS. |
 | **Body size** | `express.json({ limit: '1mb' })`. |
 | **Uploads** | Session images: **images only**, max **5MB**; non-images rejected with a clear message. |

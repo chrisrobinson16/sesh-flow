@@ -1746,6 +1746,13 @@ textarea {
   align-items: stretch;
 }
 
+.auth-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  line-height: 1.4;
+}
+
 .auth-toggle {
   width: 2.6rem;
   min-height: 44px;

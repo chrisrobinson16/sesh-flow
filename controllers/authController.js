@@ -1,7 +1,11 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import validator from 'validator'
 import User from '../models/User.js'
+import {
+  validateLoginEmail,
+  validateRegistrationEmail,
+  validateRegistrationPassword,
+} from '../lib/authValidation.js'
 
 const signToken = (id) => {
   if (!process.env.JWT_SECRET) {
@@ -17,23 +21,24 @@ const GENERIC_LOGIN_ERROR = 'Invalid email or password'
 export const registerUser = async (req, res, next) => {
   try {
     const name = String(req.body?.name ?? '').trim()
-    const emailRaw = String(req.body?.email ?? '').trim().toLowerCase()
     const password = req.body?.password
 
     if (!name) {
       return res.status(400).json({ message: 'Name is required' })
     }
-    if (!emailRaw) {
-      return res.status(400).json({ message: 'Please enter a valid email address' })
+
+    const emailCheck = validateRegistrationEmail(req.body?.email)
+    if (!emailCheck.ok) {
+      return res.status(400).json({ message: emailCheck.message })
     }
-    if (!validator.isEmail(emailRaw)) {
-      return res.status(400).json({ message: 'Please enter a valid email address' })
-    }
-    if (password == null || String(password).trim() === '') {
-      return res.status(400).json({ message: 'Password is required' })
-    }
-    if (String(password).length < 8) {
-      return res.status(400).json({ message: 'Password must be at least 8 characters' })
+    const emailRaw = emailCheck.value
+
+    const passwordCheck = validateRegistrationPassword(password, {
+      name,
+      email: emailRaw,
+    })
+    if (!passwordCheck.ok) {
+      return res.status(400).json({ message: passwordCheck.message })
     }
 
     const existing = await User.findOne({ email: emailRaw })
@@ -66,15 +71,13 @@ export const registerUser = async (req, res, next) => {
 
 export const loginUser = async (req, res, next) => {
   try {
-    const emailRaw = String(req.body?.email ?? '').trim().toLowerCase()
     const password = req.body?.password
+    const emailCheck = validateLoginEmail(req.body?.email)
 
-    if (!emailRaw || password == null || String(password).trim() === '') {
+    if (!emailCheck.ok || password == null || String(password).trim() === '') {
       return res.status(401).json({ message: GENERIC_LOGIN_ERROR })
     }
-    if (!validator.isEmail(emailRaw)) {
-      return res.status(401).json({ message: GENERIC_LOGIN_ERROR })
-    }
+    const emailRaw = emailCheck.value
 
     const user = await User.findOne({ email: emailRaw }).select('+password')
 

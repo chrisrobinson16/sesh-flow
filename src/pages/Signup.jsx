@@ -6,12 +6,78 @@ import { API_ROUTES } from '../lib/apiConfig'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const PLACEHOLDER_DOMAINS = new Set([
+  'example.com',
+  'example.org',
+  'example.net',
+  'test.com',
+  'fake.com',
+  'asdf.com',
+  'qwerty.com',
+  'localhost',
+  'localhost.com',
+  'sample.com',
+])
+const RESERVED_TLDS = new Set(['test', 'example', 'invalid', 'localhost', 'local'])
+
+const COMMON_WEAK_PASSWORDS = new Set([
+  'password',
+  'password1',
+  'password12',
+  'password123',
+  'password1234',
+  'passw0rd',
+  'qwerty',
+  'qwerty1',
+  'qwerty12',
+  'qwerty123',
+  '12345678',
+  '123456789',
+  '1234567890',
+  'iloveyou1',
+  'admin123',
+  'admin1234',
+  'letmein1',
+  'welcome1',
+  'welcome123',
+  'changeme1',
+  'changeme123',
+])
+
+function localValidateEmail(email) {
+  if (!EMAIL_RE.test(email)) return 'Please enter a valid email address'
+  const domain = email.slice(email.lastIndexOf('@') + 1).toLowerCase()
+  const tld = domain.split('.').pop() || ''
+  if (PLACEHOLDER_DOMAINS.has(domain) || RESERVED_TLDS.has(tld)) {
+    return 'Please use a real email address (placeholder domains are not allowed)'
+  }
+  return ''
+}
+
+function localValidatePassword(password, { name, email }) {
+  if (password.length < 8) return 'Password must be at least 8 characters'
+  if (password.length > 128) return 'Password must be 128 characters or fewer'
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    return 'Password must contain at least one letter and one number'
+  }
+  const lowered = password.toLowerCase()
+  if (COMMON_WEAK_PASSWORDS.has(lowered)) {
+    return 'That password is too common. Please choose a stronger one.'
+  }
+  const cleanName = String(name || '').trim().toLowerCase()
+  if (cleanName && cleanName.length >= 4 && lowered === cleanName) {
+    return 'Password cannot be the same as your name'
+  }
+  const local = String(email || '').split('@')[0].toLowerCase()
+  if (local && local.length >= 4 && lowered === local) {
+    return 'Password cannot be the same as your email'
+  }
+  return ''
+}
+
 function mapSignupError(message) {
   const m = String(message || '').trim()
   if (!m) return 'Sign up failed. Try again.'
-  if (m === 'Please enter a valid email address') return m
-  if (m === 'Password must be at least 8 characters') return m
-  if (m === 'An account with this email already exists') return m
   const raw = m.toLowerCase()
   if (raw.includes('too many attempts')) {
     return 'Too many attempts. Please try again later.'
@@ -44,13 +110,18 @@ function Signup() {
       return
     }
 
-    if (!EMAIL_RE.test(cleanEmail)) {
-      setError('Please enter a valid email address')
+    const emailErr = localValidateEmail(cleanEmail)
+    if (emailErr) {
+      setError(emailErr)
       return
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
+    const passwordErr = localValidatePassword(password, {
+      name: cleanName,
+      email: cleanEmail,
+    })
+    if (passwordErr) {
+      setError(passwordErr)
       return
     }
 
@@ -161,8 +232,11 @@ function Signup() {
                 required
                 autoComplete="new-password"
                 minLength={8}
+                maxLength={128}
                 aria-invalid={Boolean(error)}
-                aria-describedby={error ? 'signup-error' : undefined}
+                aria-describedby={
+                  error ? 'signup-error signup-password-hint' : 'signup-password-hint'
+                }
               />
               <button
                 type="button"
@@ -173,6 +247,9 @@ function Signup() {
                 {showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
               </button>
             </div>
+            <p className="auth-hint" id="signup-password-hint">
+              At least 8 characters, with letters and numbers.
+            </p>
 
             <label htmlFor="signup-confirm-password">Confirm Password</label>
             <div className="auth-password-row">
@@ -184,6 +261,7 @@ function Signup() {
                 required
                 autoComplete="new-password"
                 minLength={8}
+                maxLength={128}
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? 'signup-error' : undefined}
               />
