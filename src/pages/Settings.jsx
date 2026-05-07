@@ -103,6 +103,11 @@ function Settings() {
           Logout
         </button>
       </div>
+
+      <p className="settings-disclaimer" role="note">
+        Sesh Tracker is a portfolio/demo project. Please avoid uploading sensitive
+        personal information.
+      </p>
     </section>
   )
 }

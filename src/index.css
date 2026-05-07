@@ -1972,6 +1972,16 @@ textarea {
   gap: 0.45rem;
 }
 
+.settings-disclaimer {
+  margin: 1.5rem auto 0;
+  max-width: 38rem;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+  opacity: 0.85;
+}
+
 /* —— Skeleton loaders (shimmer, wellness palette) —— */
 .skeleton-block {
   position: relative;

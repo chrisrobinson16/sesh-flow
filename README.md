@@ -131,3 +131,9 @@ python3 scripts/generate-pwa-icons.py
 ```
 
 Then run `npm run build` again.
+
+## Demo Notice
+
+Sesh Tracker is a portfolio/demo application built to showcase full-stack product development skills including authentication, protected routes, file uploads, responsive design, PWA functionality, and mobile-first UX.
+
+The project includes basic security protections and validation, but users should avoid uploading sensitive personal information.
